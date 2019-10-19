@@ -1,0 +1,39 @@
+version: '3.7'
+
+services:
+    reverseproxy:
+        build:
+            context: .
+        image: reverseproxy
+        restart: unless-stopped
+        environment:
+            - LISTEN_PORT=8085
+            - PROXY_PASS=http://10.1.1.3:8123
+        volumes:
+            - /etc/localtime:/etc/localtime:ro
+        networks:
+            home:
+                ipv4_address: 10.1.1.10
+            vpn:
+
+    nginx:
+        depends_on:
+            - reverseproxy
+        image: nginx:alpine
+        restart: always
+        networks:
+            - vpn
+
+networks:
+    internal:
+        name: internal
+    home:
+        name: home
+        driver: macvlan
+        driver_opts:
+            parent: enp2s0f0
+        ipam:
+            config:
+                - subnet: 10.1.0.0/16
+    vpn:
+        name: vpn
